@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業愛車保養管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding-top: 70px; /* 預留給固定頁首的空間 */
+        }
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s;
+        }
+        .fixed-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e2e8f0;
+        }
+        input, select, textarea {
+            border-radius: 0.5rem !important;
+        }
+        .badge-critical {
+            background-color: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 固定式導航 -->
+    <header class="fixed-header px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-car-side text-blue-600 text-2xl"></i>
+            <h1 class="text-xl font-bold text-gray-800">愛車保養管家</h1>
+        </div>
+        <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-600">
+            <a href="#basic-info" class="hover:text-blue-600 transition">基本資料</a>
+            <a href="#maintenance-form" class="hover:text-blue-600 transition">新增紀錄</a>
+            <a href="#history" class="hover:text-blue-600 transition">歷史紀錄</a>
+            <a href="#guide" class="hover:text-blue-600 transition">保養指南</a>
+        </nav>
+        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+            <i class="fas fa-save mr-2"></i>匯出報表
+        </button>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-4 space-y-8">
+
+        <!-- 1. 車輛基本資料卡片 -->
+        <section id="basic-info" class="card p-6 border-l-4 border-blue-500">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-id-card text-blue-500 mr-3 text-xl"></i>
+                <h2 class="text-lg font-bold text-gray-800">車輛基本資料</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1">車型 / 年份</label>
+                    <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none focus:ring-2 focus:ring-blue-400" placeholder="例如：Toyota RAV4 / 2023">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1">車牌號碼</label>
+                    <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="ABC-1234">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1">引擎/車身號碼</label>
+                    <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="用於訂購零件維修">
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 新增保養紀錄 -->
+        <section id="maintenance-form" class="card p-6">
+            <div class="flex items-center mb-6">
+                <i class="fas fa-tools text-orange-500 mr-3 text-xl"></i>
+                <h2 class="text-lg font-bold text-gray-800">新增本次保養紀錄</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-500 mb-1">紀錄日期</label>
+                            <input type="date" id="m-date" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-500 mb-1">目前里程 (km)</label>
+                            <input type="number" id="m-mileage" oninput="suggestMaintenance()" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none focus:ring-2 focus:ring-orange-400" placeholder="例如：10000">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1">承做單位</label>
+                        <select id="m-provider" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none">
+                            <option value="原廠">原廠授權保養廠</option>
+                            <option value="外廠">一般坊間外廠</option>
+                            <option value="DIY">自行保養 (DIY)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1">總金額 (含工資零件)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2 text-gray-400">$</span>
+                            <input type="number" id="m-cost" class="w-full bg-gray-50 border border-gray-200 p-2 pl-7 outline-none" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1">施作項目內容</label>
+                        <textarea id="m-items" rows="3" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="請輸入施作細節..."></textarea>
+                        <div id="suggestion-box" class="mt-2 text-xs text-blue-600 bg-blue-50 p-3 rounded-lg hidden border border-blue-100">
+                            <div class="flex items-start">
+                                <i class="fas fa-lightbulb mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-bold">里程建議：</span><span id="suggestion-text"></span><br>
+                                    <span class="text-gray-500 mt-1 block" id="suggestion-note"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1">備註 / 下次預計里程</label>
+                        <input type="text" id="m-next" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="例如：下次預計 20,000 km">
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="saveRecord()" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-black transition-all shadow-lg active:scale-95">
+                儲存保養紀錄
+            </button>
+        </section>
+
+        <!-- 3. 歷史紀錄列表 -->
+        <section id="history" class="space-y-4">
+            <h3 class="text-gray-600 font-bold ml-1">歷史保養紀錄</h3>
+            <div id="record-list" class="space-y-4">
+                <!-- 範例紀錄 -->
+                <div class="card p-5 border-l-4 border-green-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded mb-2 inline-block">10,000 km 紀錄</span>
+                            <h4 class="font-bold text-gray-800 text-lg">更換機油、機油芯、輪胎對調</h4>
+                            <p class="text-sm text-gray-500 mt-1"><i class="far fa-calendar-alt mr-2"></i>2024-12-01 | <i class="fas fa-map-marker-alt mr-2"></i>原廠保養廠</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xl font-black text-gray-900">$ 5,600</p>
+                            <p class="text-xs text-gray-400 mt-1">下次預計: 20,000 km</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. 核心保養項目清單 -->
+        <section id="guide" class="card overflow-hidden">
+            <div class="p-6 bg-gray-50 border-b border-gray-200">
+                <h2 class="text-lg font-bold text-gray-800">核心保養項目指南</h2>
+                <p class="text-sm text-gray-500">依照「里程」或「時間」頻率分類之建議清單</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white border-b">
+                        <tr>
+                            <th class="px-6 py-4 font-bold text-gray-700">里程/時間</th>
+                            <th class="px-6 py-4 font-bold text-gray-700">基礎保養項目</th>
+                            <th class="px-6 py-4 font-bold text-gray-700">重點檢查/更換</th>
+                            <th class="px-6 py-4 font-bold text-gray-700">備註事項</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y" id="guide-table-body">
+                        <!-- 由 JavaScript 自動填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. 知識小卡 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
+                <h3 class="font-bold text-blue-800 mb-3"><i class="fas fa-oil-can mr-2"></i>機油推薦與選用</h3>
+                <p class="text-sm text-gray-700 leading-relaxed">
+                    推薦黏度：<strong class="text-blue-600">0W-20</strong> 或 <strong class="text-blue-600">5W-30</strong>。<br>
+                    原因：低黏度機油能有效降低引擎運轉阻力，保護渦輪系統散熱，並發揮節能優勢。切勿使用 5W-50 等過高黏度機油。
+                </p>
+            </div>
+            <div class="card p-6 bg-gradient-to-br from-gray-50 to-white border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-3"><i class="fas fa-ring mr-2"></i>輪胎養護建議</h3>
+                <p class="text-sm text-gray-700 leading-relaxed">
+                    一般約可使用 40,000 至 50,000 公里。建議每 <strong class="text-orange-600">10,000 公里</strong> 進行對調以平均磨耗。若胎紋深度低於 <strong class="text-red-600">1.6mm</strong> 則必須立即更換。
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="py-12 text-center text-gray-400 text-xs">
+        © 2024 Professional Car Maintenance System. Keep Driving Safely.
+    </footer>
+
+    <script>
+        // 定義保養清單 (根據用戶提供資料)
+        const maintenanceLogic = [
+            { km: 1000, title: "1,000 km", items: "全車檢查", core: "視情況更換機油、機油芯", note: "免費健檢，建立車籍資料" },
+            { km: 5000, title: "5,000 km", items: "更換機油", core: "檢查胎壓、煞車、冷卻水", note: "若全高速行駛可延至1萬" },
+            { km: 10000, title: "10,000 km", items: "機油、機油芯", core: "輪胎對調、空氣濾網清潔", note: "建議添加汽油精清潔油路" },
+            { km: 20000, title: "20,000 km", items: "機油、機油芯", core: "空氣濾網、冷氣濾網更換", note: "檢查煞車油含水量" },
+            { km: 40000, title: "40,000 km", items: "機油、機油芯", core: "變速箱油 (CVT Fluid)、煞車油", note: "此為大保養，費用較高", critical: true },
+            { km: 60000, title: "60,000 km", items: "機油、機油芯", core: "皮帶張力檢查、火星塞檢查", note: "視耗損情況更換皮帶" },
+            { km: 100000, title: "100,000 km", items: "機油、機油芯", core: "長效冷卻水更換、火星塞更換", note: "全車大體檢" }
+        ];
+
+        // 填充保養指南表格
+        const tableBody = document.getElementById('guide-table-body');
+        maintenanceLogic.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.className = row.critical ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50";
+            tr.innerHTML = `
+                <td class="px-6 py-4 font-semibold">${row.title}</td>
+                <td class="px-6 py-4">${row.items}</td>
+                <td class="px-6 py-4">${row.core}</td>
+                <td class="px-6 py-4 text-gray-500">${row.note}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+        // 自動建議功能邏輯
+        function suggestMaintenance() {
+            const mileageInput = document.getElementById('m-mileage').value;
+            const mileage = parseInt(mileageInput);
+            const suggestionBox = document.getElementById('suggestion-box');
+            const suggestionText = document.getElementById('suggestion-text');
+            const suggestionNote = document.getElementById('suggestion-note');
+            const itemsArea = document.getElementById('m-items');
+            const nextInput = document.getElementById('m-next');
+
+            if (!mileageInput || isNaN(mileage)) {
+                suggestionBox.classList.add('hidden');
+                return;
+            }
+
+            // 尋找最近的保養級距
+            const match = maintenanceLogic.reduce((prev, curr) => {
+                return (Math.abs(curr.km - mileage) < Math.abs(prev.km - mileage)) ? curr : prev;
+            });
+
+            // 如果誤差在正負 1500km 內，觸發建議
+            if (Math.abs(match.km - mileage) <= 1500) {
+                suggestionBox.classList.remove('hidden');
+                suggestionText.innerText = `${match.items} + ${match.core}`;
+                suggestionNote.innerText = `💡 貼心提醒：${match.note}`;
+                
+                // 如果欄位目前為空，自動填充
+                if (itemsArea.value === "") {
+                    itemsArea.value = `${match.items}、${match.core}`;
+                }
+                
+                // 自動帶入下一次預計里程
+                const nextKm = match.km + 10000;
+                if (nextInput.value === "") {
+                    nextInput.value = `預計 ${nextKm.toLocaleString()} km 保養`;
+                }
+            } else {
+                suggestionBox.classList.add('hidden');
+            }
+        }
+
+        // 儲存紀錄至列表
+        function saveRecord() {
+            const date = document.getElementById('m-date').value;
+            const km = document.getElementById('m-mileage').value;
+            const items = document.getElementById('m-items').value;
+            const cost = document.getElementById('m-cost').value;
+            const provider = document.getElementById('m-provider').value;
+            const next = document.getElementById('m-next').value;
+
+            if (!date || !km || !items) {
+                alert("請填寫基本日期、里程與施作項目內容！");
+                return;
+            }
+
+            const recordList = document.getElementById('record-list');
+            const newCard = document.createElement('div');
+            newCard.className = "card p-5 border-l-4 border-blue-500 transition-all";
+            
+            newCard.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded mb-2 inline-block">${parseInt(km).toLocaleString()} km 紀錄</span>
+                        <h4 class="font-bold text-gray-800 text-lg">${items}</h4>
+                        <p class="text-sm text-gray-500 mt-1"><i class="far fa-calendar-alt mr-2"></i>${date} | <i class="fas fa-map-marker-alt mr-2"></i>${provider}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-black text-gray-900">$ ${parseInt(cost || 0).toLocaleString()}</p>
+                        <p class="text-xs text-gray-400 mt-1">下次預計: ${next || '--'}</p>
+                    </div>
+                </div>
+            `;
+
+            recordList.prepend(newCard);
+            
+            // 重置表單
+            document.getElementById('m-mileage').value = "";
+            document.getElementById('m-items').value = "";
+            document.getElementById('m-cost').value = "";
+            document.getElementById('m-next').value = "";
+            
+            // 跳轉到歷史紀錄區塊
+            document.getElementById('history').scrollIntoView({behavior: "smooth"});
+        }
+
+        // 初始化當天日期
+        document.getElementById('m-date').valueAsDate = new Date();
+    </script>
+</body>
+</html>
