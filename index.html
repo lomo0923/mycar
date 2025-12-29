@@ -31,9 +31,16 @@
         input, select, textarea {
             border-radius: 0.5rem !important;
         }
-        .record-card:hover {
+        .item-checkbox:checked + label {
+            background-color: #eff6ff;
             border-color: #3b82f6;
-            transform: translateY(-2px);
+            color: #1e40af;
+        }
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
         }
     </style>
 </head>
@@ -46,9 +53,8 @@
             <h1 class="text-xl font-bold text-gray-800">愛車保養管家</h1>
         </div>
         <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-600">
-            <a href="#basic-info" class="hover:text-blue-600 transition">基本資料</a>
-            <a href="#maintenance-form" class="hover:text-blue-600 transition">新增紀錄</a>
-            <a href="#history" class="hover:text-blue-600 transition">歷史紀錄</a>
+            <button onclick="switchPage('main')" class="nav-link text-blue-600 font-bold hover:text-blue-700 transition">主要紀錄</button>
+            <button onclick="switchPage('settings')" class="nav-link hover:text-blue-600 transition">保養項目管理</button>
             <a href="#guide" class="hover:text-blue-600 transition">保養指南</a>
         </nav>
         <div class="flex items-center space-x-3">
@@ -60,122 +66,174 @@
 
     <main class="max-w-5xl mx-auto p-4 space-y-8">
 
-        <!-- 1. 車輛基本資料卡片 -->
-        <section id="basic-info" class="card p-6 border-l-4 border-blue-500">
-            <div class="flex items-center mb-4">
-                <i class="fas fa-id-card text-blue-500 mr-3 text-xl"></i>
-                <h2 class="text-lg font-bold text-gray-800">車輛基本資料</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <label class="block text-sm text-gray-500 mb-1">車型 / 年份</label>
-                    <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none focus:ring-2 focus:ring-blue-400" placeholder="例如：Toyota RAV4 / 2023">
+        <!-- 頁面：主要紀錄頁 -->
+        <div id="page-main" class="page-content active space-y-8">
+            <!-- 1. 車輛基本資料 -->
+            <section id="basic-info" class="card p-6 border-l-4 border-blue-500">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-id-card text-blue-500 mr-3 text-xl"></i>
+                    <h2 class="text-lg font-bold text-gray-800">車輛基本資料</h2>
                 </div>
-                <div>
-                    <label class="block text-sm text-gray-500 mb-1">車牌號碼</label>
-                    <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="ABC-1234">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1">車型 / 年份</label>
+                        <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="RAV4 / 2023">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1">車牌號碼</label>
+                        <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="ABC-1234">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-500 mb-1">引擎/車身號碼</label>
+                        <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="零件維修參考">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm text-gray-500 mb-1">引擎/車身號碼</label>
-                    <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="用於訂購零件維修">
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- 2. 新增/編輯保養紀錄 -->
-        <section id="maintenance-form" class="card p-6">
-            <div class="flex items-center mb-6">
-                <i class="fas fa-tools text-orange-500 mr-3 text-xl"></i>
-                <h2 id="form-title" class="text-lg font-bold text-gray-800">新增本次保養紀錄</h2>
-            </div>
-            
-            <input type="hidden" id="edit-id" value="">
+            <!-- 2. 新增/編輯保養紀錄 -->
+            <section id="maintenance-form" class="card p-6">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-tools text-orange-500 mr-3 text-xl"></i>
+                    <h2 id="form-title" class="text-lg font-bold text-gray-800">新增本次保養紀錄</h2>
+                </div>
+                
+                <input type="hidden" id="edit-id" value="">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm text-gray-500 mb-1">紀錄日期</label>
-                            <input type="date" id="m-date" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-6">
+                    <!-- 左側資料 -->
+                    <div class="lg:col-span-4 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-500 mb-1">紀錄日期</label>
+                                <input type="date" id="m-date" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-500 mb-1">目前里程 (km)</label>
+                                <input type="number" id="m-mileage" oninput="suggestAndCheckItems()" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none focus:ring-2 focus:ring-orange-400" placeholder="10000">
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-sm text-gray-500 mb-1">目前里程 (km)</label>
-                            <input type="number" id="m-mileage" oninput="suggestMaintenance()" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none focus:ring-2 focus:ring-orange-400" placeholder="例如：10000">
+                            <label class="block text-sm text-gray-500 mb-1">承做單位</label>
+                            <select id="m-provider" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none">
+                                <option value="原廠">原廠授權保養廠</option>
+                                <option value="外廠">一般坊間外廠</option>
+                                <option value="DIY">自行保養 (DIY)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-500 mb-1">總金額 (含工資零件)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-gray-400">$</span>
+                                <input type="number" id="m-cost" class="w-full bg-gray-50 border border-gray-200 p-2 pl-7 outline-none" placeholder="0">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-500 mb-1">備註 / 下次預計</label>
+                            <input type="text" id="m-next" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="例如：下次預計 20,000 km">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm text-gray-500 mb-1">承做單位</label>
-                        <select id="m-provider" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none">
-                            <option value="原廠">原廠授權保養廠</option>
-                            <option value="外廠">一般坊間外廠</option>
-                            <option value="DIY">自行保養 (DIY)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-500 mb-1">總金額 (含工資零件)</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-2 text-gray-400">$</span>
-                            <input type="number" id="m-cost" class="w-full bg-gray-50 border border-gray-200 p-2 pl-7 outline-none" placeholder="0">
-                        </div>
-                    </div>
-                </div>
 
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm text-gray-500 mb-1">施作項目內容</label>
-                        <textarea id="m-items" rows="3" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="請輸入施作細節..."></textarea>
-                        <div id="suggestion-box" class="mt-2 text-xs text-blue-600 bg-blue-50 p-3 rounded-lg hidden border border-blue-100">
+                    <!-- 右側：複選施作項目 -->
+                    <div class="lg:col-span-8">
+                        <label class="block text-sm font-bold text-gray-600 mb-3">施作項目 (勾選點選)</label>
+                        <div id="items-selector" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto p-1">
+                            <!-- 由 JavaScript 渲染保養庫內容 -->
+                        </div>
+                        
+                        <!-- 智能建議提醒 -->
+                        <div id="suggestion-box" class="mt-4 text-xs text-blue-600 bg-blue-50 p-3 rounded-lg hidden border border-blue-100">
                             <div class="flex items-start">
-                                <i class="fas fa-lightbulb mt-1 mr-2"></i>
+                                <i class="fas fa-magic mt-1 mr-2"></i>
                                 <div>
-                                    <span class="font-bold">里程建議：</span><span id="suggestion-text"></span><br>
+                                    <span class="font-bold">里程建議：</span>已經自動為您勾選 <span id="suggestion-text" class="underline"></span> 相關項目。<br>
                                     <span class="text-gray-500 mt-1 block" id="suggestion-note"></span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm text-gray-500 mb-1">備註 / 下次預計里程</label>
-                        <input type="text" id="m-next" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="例如：下次預計 20,000 km">
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button id="save-btn" onclick="saveRecord()" class="flex-1 bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-black transition-all shadow-lg active:scale-95">
+                        儲存保養紀錄
+                    </button>
+                    <button id="cancel-edit-btn" onclick="resetForm()" class="hidden bg-gray-200 text-gray-600 px-6 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all">
+                        取消修改
+                    </button>
+                </div>
+            </section>
+
+            <!-- 3. 歷史紀錄列表 -->
+            <section id="history" class="space-y-4">
+                <h3 class="text-gray-600 font-bold ml-1 flex justify-between items-center">
+                    <span>歷史保養紀錄</span>
+                    <span class="text-xs font-normal text-gray-400">點擊筆圖示可修改</span>
+                </h3>
+                <div id="record-list" class="space-y-4"></div>
+            </section>
+        </div>
+
+        <!-- 頁面：項目管理頁 -->
+        <div id="page-settings" class="page-content space-y-8">
+            <section class="card p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-list-check text-indigo-500 mr-3 text-xl"></i>
+                        <h2 class="text-lg font-bold text-gray-800">保養項目庫管理</h2>
                     </div>
+                    <button onclick="switchPage('main')" class="text-sm text-blue-600 hover:underline">返回紀錄頁</button>
+                </div>
+
+                <div class="bg-indigo-50 p-4 rounded-lg mb-6 flex gap-4 items-end">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-700 mb-1 uppercase">新增自定義保養項目</label>
+                        <input type="text" id="new-item-name" class="w-full bg-white border border-indigo-200 p-2 outline-none" placeholder="例如：更換雨刷、鍍膜維護...">
+                    </div>
+                    <button onclick="addNewCustomItem()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition">
+                        新增
+                    </button>
+                </div>
+
+                <div id="manage-items-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- 管理列表 -->
+                </div>
+            </section>
+        </div>
+
+        <!-- 4. 知識小卡 (新增推薦內容) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
+                <h3 class="font-bold text-blue-800 mb-3"><i class="fas fa-oil-can mr-2"></i>機油推薦與選用</h3>
+                <div class="text-sm text-gray-700 leading-relaxed space-y-2">
+                    <p>推薦黏度：<strong class="text-blue-600">0W-20</strong> 或 <strong class="text-blue-600">5W-30</strong>。</p>
+                    <p>原因：低黏度機油能有效降低引擎運轉阻力，發揮 <span class="font-bold text-blue-700 underline">Hybrid 系統</span> 的節能優勢，並保護渦輪系統散熱。</p>
+                    <p class="text-red-500 font-bold">⚠️ 切勿使用黏度過高（如 5W-50）的機油，可能導致油耗增加與動力反應遲鈍。</p>
                 </div>
             </div>
-            
-            <div class="flex space-x-3">
-                <button id="save-btn" onclick="saveRecord()" class="flex-1 bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-black transition-all shadow-lg active:scale-95">
-                    儲存保養紀錄
-                </button>
-                <button id="cancel-edit-btn" onclick="resetForm()" class="hidden bg-gray-200 text-gray-600 px-6 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all">
-                    取消修改
-                </button>
+            <div class="card p-6 bg-gradient-to-br from-gray-50 to-white border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-3"><i class="fas fa-ring mr-2"></i>輪胎養護與更換</h3>
+                <div class="text-sm text-gray-700 leading-relaxed space-y-2">
+                    <p>原廠配胎通常較耐磨，一般約可使用 <strong class="text-orange-600">40,000 至 50,000 公里</strong>。</p>
+                    <p>建議每 <strong class="text-blue-600">10,000 公里</strong> 進行輪胎對調（前後左右交叉），以平均磨耗，延長輪胎壽命。</p>
+                    <p>⚠️ 若胎紋深度低於 <strong class="text-red-600">1.6mm</strong> 則必須立即更換。</p>
+                </div>
             </div>
-        </section>
+        </div>
 
-        <!-- 3. 歷史紀錄列表 -->
-        <section id="history" class="space-y-4">
-            <h3 class="text-gray-600 font-bold ml-1 flex justify-between items-center">
-                <span>歷史保養紀錄</span>
-                <span class="text-xs font-normal text-gray-400">點擊筆圖示可進行編輯</span>
-            </h3>
-            <div id="record-list" class="space-y-4">
-                <!-- 內容由 JavaScript 生成 -->
-            </div>
-        </section>
-
-        <!-- 4. 核心保養項目清單 -->
+        <!-- 共通：保養指南 -->
         <section id="guide" class="card overflow-hidden">
             <div class="p-6 bg-gray-50 border-b border-gray-200">
                 <h2 class="text-lg font-bold text-gray-800">核心保養項目指南</h2>
-                <p class="text-sm text-gray-500">依照「里程」或「時間」頻率分類之建議清單</p>
+                <p class="text-sm text-gray-500">建議更換頻率與里程對照表</p>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-white border-b">
                         <tr>
-                            <th class="px-6 py-4 font-bold text-gray-700">里程/時間</th>
-                            <th class="px-6 py-4 font-bold text-gray-700">基礎保養項目</th>
+                            <th class="px-6 py-4 font-bold text-gray-700">里程</th>
+                            <th class="px-6 py-4 font-bold text-gray-700">基礎保養</th>
                             <th class="px-6 py-4 font-bold text-gray-700">重點檢查/更換</th>
-                            <th class="px-6 py-4 font-bold text-gray-700">備註事項</th>
+                            <th class="px-6 py-4 font-bold text-gray-700">備註</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y" id="guide-table-body"></tbody>
@@ -183,129 +241,160 @@
             </div>
         </section>
 
-        <!-- 5. 知識小卡 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="card p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
-                <h3 class="font-bold text-blue-800 mb-3"><i class="fas fa-oil-can mr-2"></i>機油推薦與選用</h3>
-                <p class="text-sm text-gray-700 leading-relaxed">
-                    推薦黏度：<strong class="text-blue-600">0W-20</strong> 或 <strong class="text-blue-600">5W-30</strong>。<br>
-                    原因：低黏度機油能有效降低引擎運轉阻力，發揮 Hybrid/渦輪 節能優勢。
-                </p>
-            </div>
-            <div class="card p-6 bg-gradient-to-br from-gray-50 to-white border border-gray-200">
-                <h3 class="font-bold text-gray-800 mb-3"><i class="fas fa-ring mr-2"></i>輪胎養護建議</h3>
-                <p class="text-sm text-gray-700 leading-relaxed">
-                    建議每 <strong class="text-orange-600">10,000 公里</strong> 進行對調。胎紋深度低於 <strong class="text-red-600">1.6mm</strong> 則必須立即更換。
-                </p>
-            </div>
-        </div>
-
     </main>
 
-    <footer class="py-12 text-center text-gray-400 text-xs">
-        © 2024 Professional Car Maintenance System. Keep Driving Safely.
-    </footer>
-
     <script>
-        // 初始化資料
+        // 核心資料庫：保養項目 (更新：變速箱油拿掉括號)
+        let maintenanceItems = [
+            "機油", "機油芯", "空氣濾網", "冷氣濾網", "變速箱油", 
+            "煞車油", "火星塞", "輪胎對調", "皮帶檢查", "冷卻水更換", 
+            "胎壓檢查", "全車健檢", "節氣門清潔", "汽油精", "電瓶檢查"
+        ];
+
+        // 歷史紀錄
         let records = [
-            { id: Date.now(), date: '2024-12-01', km: 10000, items: '更換機油、機油芯、輪胎對調', cost: 5600, provider: '原廠', next: '預計 20,000 km' }
+            { id: 1, date: '2024-12-01', km: 10000, items: ['機油', '機油芯', '輪胎對調'], cost: 3500, provider: '原廠', next: '20,000 km' }
         ];
 
-        const maintenanceLogic = [
-            { km: 1000, title: "1,000 km", items: "全車檢查", core: "視情況更換機油、機油芯", note: "免費健檢，建立車籍資料" },
-            { km: 5000, title: "5,000 km", items: "更換機油", core: "檢查胎壓、煞車、冷卻水", note: "若全高速行駛可延至1萬" },
-            { km: 10000, title: "10,000 km", items: "機油、機油芯", core: "輪胎對調、空氣濾網清潔", note: "建議添加汽油精清潔油路" },
-            { km: 20000, title: "20,000 km", items: "機油、機油芯", core: "空氣濾網、冷氣濾網更換", note: "檢查煞車油含水量" },
-            { km: 40000, title: "40,000 km", items: "機油、機油芯", core: "變速箱油 (CVT Fluid)、煞車油", note: "此為大保養，費用較高", critical: true },
-            { km: 60000, title: "60,000 km", items: "機油、機油芯", core: "皮帶張力檢查、火星塞檢查", note: "視耗損情況更換皮帶" },
-            { km: 100000, title: "100,000 km", items: "機油、機油芯", core: "長效冷卻水更換、火星塞更換", note: "全車大體檢" }
+        // 里程建議規則 (更新：變速箱油調整為備註方式)
+        const suggestRules = [
+            { km: 1000, items: ["全車健檢", "機油", "機油芯"], note: "免費健檢，建立車籍資料" },
+            { km: 5000, items: ["機油", "胎壓檢查"], note: "若全高速行駛可延至1萬；檢查冷卻水" },
+            { km: 10000, items: ["機油", "機油芯", "輪胎對調", "空氣濾網"], note: "建議每1萬km輪胎對調，添加汽油精" },
+            { km: 20000, items: ["機油", "機油芯", "空氣濾網", "冷氣濾網", "煞車油"], note: "檢查煞車油含水量" },
+            { km: 40000, items: ["機油", "機油芯", "變速箱油", "煞車油"], note: "大保養：建議更換變速箱油、輪胎磨耗檢查", critical: true },
+            { km: 60000, items: ["機油", "機油芯", "皮帶檢查", "火星塞"], note: "視耗損情況更換皮帶" },
+            { km: 100000, items: ["機油", "機油芯", "冷卻水更換", "火星塞"], note: "全車大體檢；冷卻水初次更換" }
         ];
 
-        // 渲染保養指南
-        function renderGuide() {
-            const tableBody = document.getElementById('guide-table-body');
-            tableBody.innerHTML = '';
-            maintenanceLogic.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.className = row.critical ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50";
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-semibold">${row.title}</td>
-                    <td class="px-6 py-4">${row.items}</td>
-                    <td class="px-6 py-4">${row.core}</td>
-                    <td class="px-6 py-4 text-gray-500">${row.note}</td>
-                `;
-                tableBody.appendChild(tr);
-            });
+        // 頁面切換
+        function switchPage(page) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('text-blue-600', 'font-bold'));
+            
+            const btn = event.target;
+            if(page === 'main') {
+                document.getElementById('page-main').classList.add('active');
+                btn.classList.add('text-blue-600', 'font-bold');
+            } else {
+                document.getElementById('page-settings').classList.add('active');
+                btn.classList.add('text-blue-600', 'font-bold');
+                renderManageItems();
+            }
         }
 
-        // 渲染歷史紀錄
-        function renderRecords() {
-            const recordList = document.getElementById('record-list');
-            recordList.innerHTML = '';
-            
-            // 依里程降序排列
-            const sortedRecords = [...records].sort((a, b) => b.km - a.km);
-
-            sortedRecords.forEach(record => {
-                const div = document.createElement('div');
-                div.className = "card p-5 border-l-4 border-blue-500 record-card";
-                div.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <span class="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded mb-2 inline-block">${parseInt(record.km).toLocaleString()} km 紀錄</span>
-                            <h4 class="font-bold text-gray-800 text-lg">${record.items}</h4>
-                            <p class="text-sm text-gray-500 mt-1">
-                                <i class="far fa-calendar-alt mr-2"></i>${record.date} | 
-                                <i class="fas fa-map-marker-alt mr-2"></i>${record.provider}
-                            </p>
-                            <p class="text-xs text-gray-400 mt-2 italic">備註: ${record.next || '無'}</p>
-                        </div>
-                        <div class="flex flex-col items-end space-y-4">
-                            <div class="text-right">
-                                <p class="text-xl font-black text-gray-900">$ ${parseInt(record.cost || 0).toLocaleString()}</p>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button onclick="editRecord(${record.id})" class="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition" title="修改內容">
-                                    <i class="fas fa-pencil-alt"></i>
-                                </button>
-                                <button onclick="deleteRecord(${record.id})" class="p-2 text-red-400 hover:bg-red-50 rounded-full transition" title="刪除紀錄">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </div>
-                        </div>
+        // 渲染施作項目複選框
+        function renderItemsSelector() {
+            const container = document.getElementById('items-selector');
+            container.innerHTML = '';
+            maintenanceItems.forEach(item => {
+                const id = `item-${item}`;
+                container.innerHTML += `
+                    <div class="relative">
+                        <input type="checkbox" id="${id}" value="${item}" class="item-checkbox hidden">
+                        <label for="${id}" class="block border border-gray-200 p-2 text-sm rounded-lg text-center cursor-pointer hover:border-blue-300 transition truncate">
+                            ${item}
+                        </label>
                     </div>
                 `;
-                recordList.appendChild(div);
             });
         }
 
-        // 儲存或更新紀錄
+        // 渲染管理清單
+        function renderManageItems() {
+            const container = document.getElementById('manage-items-list');
+            container.innerHTML = '';
+            maintenanceItems.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-sm font-medium text-gray-700">${item}</span>
+                        <button onclick="removeItem(${index})" class="text-red-400 hover:text-red-600 px-2">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function addNewCustomItem() {
+            const input = document.getElementById('new-item-name');
+            const val = input.value.trim();
+            if(val && !maintenanceItems.includes(val)) {
+                maintenanceItems.push(val);
+                input.value = '';
+                renderManageItems();
+                renderItemsSelector();
+            }
+        }
+
+        function removeItem(index) {
+            if(confirm('確定要移除此保養項目嗎？')) {
+                maintenanceItems.splice(index, 1);
+                renderManageItems();
+                renderItemsSelector();
+            }
+        }
+
+        // 智能建議與自動勾選
+        function suggestAndCheckItems() {
+            const km = parseInt(document.getElementById('m-mileage').value);
+            const suggestionBox = document.getElementById('suggestion-box');
+            
+            // 先清除所有勾選
+            document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
+
+            if(!km) {
+                suggestionBox.classList.add('hidden');
+                return;
+            }
+
+            const match = suggestRules.reduce((prev, curr) => {
+                return (Math.abs(curr.km - km) < Math.abs(prev.km - km)) ? curr : prev;
+            });
+
+            if (Math.abs(match.km - km) <= 1500) {
+                suggestionBox.classList.remove('hidden');
+                document.getElementById('suggestion-text').innerText = match.km + "km";
+                document.getElementById('suggestion-note').innerText = match.note;
+                
+                // 自動勾選對應項目
+                match.items.forEach(itemKeyword => {
+                    maintenanceItems.forEach(libItem => {
+                        if(libItem.includes(itemKeyword) || itemKeyword.includes(libItem)) {
+                            const cb = document.getElementById(`item-${libItem}`);
+                            if(cb) cb.checked = true;
+                        }
+                    });
+                });
+            } else {
+                suggestionBox.classList.add('hidden');
+            }
+        }
+
+        // 儲存紀錄
         function saveRecord() {
             const editId = document.getElementById('edit-id').value;
-            const recordData = {
+            const checkedItems = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+            
+            const data = {
                 date: document.getElementById('m-date').value,
                 km: parseInt(document.getElementById('m-mileage').value),
-                items: document.getElementById('m-items').value,
+                items: checkedItems,
                 cost: parseInt(document.getElementById('m-cost').value) || 0,
                 provider: document.getElementById('m-provider').value,
                 next: document.getElementById('m-next').value
             };
 
-            if (!recordData.date || isNaN(recordData.km) || !recordData.items) {
-                alert("請填寫基本日期、里程與施作項目內容！");
+            if(!data.date || !data.km || data.items.length === 0) {
+                alert("請填寫日期、里程，並至少勾選一個施作項目！");
                 return;
             }
 
-            if (editId) {
-                // 更新現有紀錄
-                const index = records.findIndex(r => r.id == editId);
-                if (index !== -1) {
-                    records[index] = { ...records[index], ...recordData };
-                }
+            if(editId) {
+                const idx = records.findIndex(r => r.id == editId);
+                records[idx] = { ...records[idx], ...data };
             } else {
-                // 新增紀錄
-                records.push({ id: Date.now(), ...recordData });
+                records.push({ id: Date.now(), ...data });
             }
 
             resetForm();
@@ -313,89 +402,93 @@
             document.getElementById('history').scrollIntoView({behavior: "smooth"});
         }
 
-        // 編輯功能
+        function renderRecords() {
+            const list = document.getElementById('record-list');
+            list.innerHTML = '';
+            records.sort((a,b) => b.km - a.km).forEach(r => {
+                list.innerHTML += `
+                    <div class="card p-5 border-l-4 border-blue-500 hover:shadow-md transition">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <span class="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded mb-2 inline-block">${r.km.toLocaleString()} km</span>
+                                <h4 class="font-bold text-gray-800 text-lg">${r.items.join('、')}</h4>
+                                <p class="text-sm text-gray-500 mt-1"><i class="far fa-calendar-alt mr-2"></i>${r.date} | ${r.provider}</p>
+                                ${r.next ? `<p class="text-xs text-gray-400 mt-2 italic">下次預計: ${r.next}</p>` : ''}
+                            </div>
+                            <div class="flex flex-col items-end space-y-4">
+                                <p class="text-xl font-black text-gray-900">$ ${r.cost.toLocaleString()}</p>
+                                <div class="flex space-x-2">
+                                    <button onclick="editRecord(${r.id})" class="text-blue-500 p-2 hover:bg-blue-50 rounded-full"><i class="fas fa-pencil-alt"></i></button>
+                                    <button onclick="deleteRecord(${r.id})" class="text-red-400 p-2 hover:bg-red-50 rounded-full"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         function editRecord(id) {
-            const record = records.find(r => r.id === id);
-            if (!record) return;
+            const r = records.find(record => record.id === id);
+            document.getElementById('edit-id').value = r.id;
+            document.getElementById('m-date').value = r.date;
+            document.getElementById('m-mileage').value = r.km;
+            document.getElementById('m-cost').value = r.cost;
+            document.getElementById('m-provider').value = r.provider;
+            document.getElementById('m-next').value = r.next;
 
-            document.getElementById('edit-id').value = record.id;
-            document.getElementById('m-date').value = record.date;
-            document.getElementById('m-mileage').value = record.km;
-            document.getElementById('m-items').value = record.items;
-            document.getElementById('m-cost').value = record.cost;
-            document.getElementById('m-provider').value = record.provider;
-            document.getElementById('m-next').value = record.next;
+            // 勾選對應項目
+            document.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.checked = r.items.includes(cb.value);
+            });
 
-            // UI 更新
             document.getElementById('form-title').innerText = "修改保養紀錄";
-            document.getElementById('save-btn').innerText = "更新保養紀錄";
+            document.getElementById('save-btn').innerText = "更新紀錄";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
             document.getElementById('maintenance-form').scrollIntoView({behavior: "smooth"});
         }
 
-        // 刪除功能
         function deleteRecord(id) {
-            if (confirm("確定要刪除這筆保養紀錄嗎？此動作無法復原。")) {
+            if(confirm('確定刪除？')) {
                 records = records.filter(r => r.id !== id);
                 renderRecords();
             }
         }
 
-        // 重置表單
         function resetForm() {
             document.getElementById('edit-id').value = "";
             document.getElementById('m-date').valueAsDate = new Date();
             document.getElementById('m-mileage').value = "";
-            document.getElementById('m-items').value = "";
             document.getElementById('m-cost').value = "";
             document.getElementById('m-next').value = "";
+            document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
             document.getElementById('form-title').innerText = "新增本次保養紀錄";
             document.getElementById('save-btn').innerText = "儲存保養紀錄";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
             document.getElementById('suggestion-box').classList.add('hidden');
         }
 
-        // 自動建議功能邏輯
-        function suggestMaintenance() {
-            const mileageInput = document.getElementById('m-mileage').value;
-            const mileage = parseInt(mileageInput);
-            const suggestionBox = document.getElementById('suggestion-box');
-            const suggestionText = document.getElementById('suggestion-text');
-            const suggestionNote = document.getElementById('suggestion-note');
-            const itemsArea = document.getElementById('m-items');
-            const nextInput = document.getElementById('m-next');
-
-            if (!mileageInput || isNaN(mileage)) {
-                suggestionBox.classList.add('hidden');
-                return;
-            }
-
-            const match = maintenanceLogic.reduce((prev, curr) => {
-                return (Math.abs(curr.km - mileage) < Math.abs(prev.km - mileage)) ? curr : prev;
+        // 渲染對照表
+        function renderGuide() {
+            const body = document.getElementById('guide-table-body');
+            body.innerHTML = '';
+            suggestRules.forEach(rule => {
+                body.innerHTML += `
+                    <tr class="${rule.critical ? 'bg-red-50' : 'hover:bg-gray-50'}">
+                        <td class="px-6 py-4 font-bold">${rule.km.toLocaleString()} km</td>
+                        <td class="px-6 py-4">${rule.items[0]}</td>
+                        <td class="px-6 py-4">${rule.items.slice(1).join('、')}</td>
+                        <td class="px-6 py-4 text-gray-500">${rule.note}</td>
+                    </tr>
+                `;
             });
-
-            if (Math.abs(match.km - mileage) <= 1500) {
-                suggestionBox.classList.remove('hidden');
-                suggestionText.innerText = `${match.items} + ${match.core}`;
-                suggestionNote.innerText = `💡 貼心提醒：${match.note}`;
-                
-                if (itemsArea.value === "") {
-                    itemsArea.value = `${match.items}、${match.core}`;
-                }
-                const nextKm = match.km + 10000;
-                if (nextInput.value === "") {
-                    nextInput.value = `預計 ${nextKm.toLocaleString()} km 保養`;
-                }
-            } else {
-                suggestionBox.classList.add('hidden');
-            }
         }
 
-        // 初始化
         window.onload = () => {
             document.getElementById('m-date').valueAsDate = new Date();
-            renderGuide();
+            renderItemsSelector();
             renderRecords();
+            renderGuide();
         };
     </script>
 </body>
