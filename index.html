@@ -6,6 +6,8 @@
     <title>專業愛車保養管理系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- 引入 PDF 產生函式庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
             background-color: #f8fafc;
@@ -42,6 +44,10 @@
         .page-content.active {
             display: block;
         }
+        /* PDF 隱藏範本樣式 */
+        #pdf-template {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -58,8 +64,8 @@
             <a href="#guide" class="hover:text-blue-600 transition">保養指南</a>
         </nav>
         <div class="flex items-center space-x-3">
-            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
-                <i class="fas fa-save mr-2"></i>匯出報表
+            <button onclick="exportToPDF()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                <i class="fas fa-file-pdf mr-2"></i>匯出 PDF 報表
             </button>
         </div>
     </header>
@@ -77,15 +83,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm text-gray-500 mb-1">車型 / 年份</label>
-                        <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="RAV4 / 2023">
+                        <input type="text" id="v-model" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="RAV4 / 2023">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-500 mb-1">車牌號碼</label>
-                        <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="ABC-1234">
+                        <input type="text" id="v-plate" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="ABC-1234">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-500 mb-1">引擎/車身號碼</label>
-                        <input type="text" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="零件維修參考">
+                        <input type="text" id="v-vin" class="w-full bg-gray-50 border border-gray-200 p-2 outline-none" placeholder="零件維修參考">
                     </div>
                 </div>
             </section>
@@ -100,7 +106,6 @@
                 <input type="hidden" id="edit-id" value="">
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-6">
-                    <!-- 左側資料 -->
                     <div class="lg:col-span-4 space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -133,14 +138,10 @@
                         </div>
                     </div>
 
-                    <!-- 右側：複選施作項目 -->
                     <div class="lg:col-span-8">
                         <label class="block text-sm font-bold text-gray-600 mb-3">施作項目 (勾選點選)</label>
-                        <div id="items-selector" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto p-1">
-                            <!-- 由 JavaScript 渲染保養庫內容 -->
-                        </div>
+                        <div id="items-selector" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto p-1"></div>
                         
-                        <!-- 智能建議提醒 -->
                         <div id="suggestion-box" class="mt-4 text-xs text-blue-600 bg-blue-50 p-3 rounded-lg hidden border border-blue-100">
                             <div class="flex items-start">
                                 <i class="fas fa-magic mt-1 mr-2"></i>
@@ -163,7 +164,7 @@
                 </div>
             </section>
 
-            <!-- 3. 歷史紀錄列表 -->
+            <!-- 歷史紀錄列表 -->
             <section id="history" class="space-y-4">
                 <h3 class="text-gray-600 font-bold ml-1 flex justify-between items-center">
                     <span>歷史保養紀錄</span>
@@ -194,13 +195,11 @@
                     </button>
                 </div>
 
-                <div id="manage-items-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <!-- 管理列表 -->
-                </div>
+                <div id="manage-items-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </section>
         </div>
 
-        <!-- 4. 知識小卡 (新增推薦內容) -->
+        <!-- 知識小卡 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="card p-6 bg-gradient-to-br from-blue-50 to-white border border-blue-100">
                 <h3 class="font-bold text-blue-800 mb-3"><i class="fas fa-oil-can mr-2"></i>機油推薦與選用</h3>
@@ -220,7 +219,7 @@
             </div>
         </div>
 
-        <!-- 共通：保養指南 -->
+        <!-- 保養指南 -->
         <section id="guide" class="card overflow-hidden">
             <div class="p-6 bg-gray-50 border-b border-gray-200">
                 <h2 class="text-lg font-bold text-gray-800">核心保養項目指南</h2>
@@ -243,20 +242,54 @@
 
     </main>
 
+    <!-- PDF 報表隱藏區域 -->
+    <div id="pdf-template" class="p-8 bg-white text-gray-800">
+        <h1 class="text-2xl font-bold border-b-2 border-blue-600 pb-2 mb-6">愛車保養維護報表</h1>
+        
+        <div class="mb-8">
+            <h2 class="text-lg font-bold bg-gray-100 p-2 mb-4">車輛基本資料</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <p><strong>車型 / 年份：</strong><span id="pdf-v-model"></span></p>
+                <p><strong>車牌號碼：</strong><span id="pdf-v-plate"></span></p>
+                <p><strong>引擎/車身號碼：</strong><span id="pdf-v-vin"></span></p>
+                <p><strong>報表日期：</strong><span id="pdf-report-date"></span></p>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="text-lg font-bold bg-gray-100 p-2 mb-4">保養紀錄明細</h2>
+            <table class="w-full border-collapse border border-gray-300 text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="border border-gray-300 p-2">日期</th>
+                        <th class="border border-gray-300 p-2">里程 (km)</th>
+                        <th class="border border-gray-300 p-2">施作項目</th>
+                        <th class="border border-gray-300 p-2">承做單位</th>
+                        <th class="border border-gray-300 p-2 text-right">金額</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-table-body">
+                    <!-- 紀錄會動態插入 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-10 text-right text-xs text-gray-400">
+            本報表由「愛車保養管家」自動生成
+        </div>
+    </div>
+
     <script>
-        // 核心資料庫：保養項目 (更新：變速箱油拿掉括號)
         let maintenanceItems = [
             "機油", "機油芯", "空氣濾網", "冷氣濾網", "變速箱油", 
             "煞車油", "火星塞", "輪胎對調", "皮帶檢查", "冷卻水更換", 
             "胎壓檢查", "全車健檢", "節氣門清潔", "汽油精", "電瓶檢查"
         ];
 
-        // 歷史紀錄
         let records = [
             { id: 1, date: '2024-12-01', km: 10000, items: ['機油', '機油芯', '輪胎對調'], cost: 3500, provider: '原廠', next: '20,000 km' }
         ];
 
-        // 里程建議規則 (更新：變速箱油調整為備註方式)
         const suggestRules = [
             { km: 1000, items: ["全車健檢", "機油", "機油芯"], note: "免費健檢，建立車籍資料" },
             { km: 5000, items: ["機油", "胎壓檢查"], note: "若全高速行駛可延至1萬；檢查冷卻水" },
@@ -267,23 +300,18 @@
             { km: 100000, items: ["機油", "機油芯", "冷卻水更換", "火星塞"], note: "全車大體檢；冷卻水初次更換" }
         ];
 
-        // 頁面切換
         function switchPage(page) {
             document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('text-blue-600', 'font-bold'));
             
-            const btn = event.target;
             if(page === 'main') {
                 document.getElementById('page-main').classList.add('active');
-                btn.classList.add('text-blue-600', 'font-bold');
             } else {
                 document.getElementById('page-settings').classList.add('active');
-                btn.classList.add('text-blue-600', 'font-bold');
                 renderManageItems();
             }
         }
 
-        // 渲染施作項目複選框
         function renderItemsSelector() {
             const container = document.getElementById('items-selector');
             container.innerHTML = '';
@@ -300,7 +328,6 @@
             });
         }
 
-        // 渲染管理清單
         function renderManageItems() {
             const container = document.getElementById('manage-items-list');
             container.innerHTML = '';
@@ -335,29 +362,21 @@
             }
         }
 
-        // 智能建議與自動勾選
         function suggestAndCheckItems() {
             const km = parseInt(document.getElementById('m-mileage').value);
             const suggestionBox = document.getElementById('suggestion-box');
-            
-            // 先清除所有勾選
             document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
-
             if(!km) {
                 suggestionBox.classList.add('hidden');
                 return;
             }
-
             const match = suggestRules.reduce((prev, curr) => {
                 return (Math.abs(curr.km - km) < Math.abs(prev.km - km)) ? curr : prev;
             });
-
             if (Math.abs(match.km - km) <= 1500) {
                 suggestionBox.classList.remove('hidden');
                 document.getElementById('suggestion-text').innerText = match.km + "km";
                 document.getElementById('suggestion-note').innerText = match.note;
-                
-                // 自動勾選對應項目
                 match.items.forEach(itemKeyword => {
                     maintenanceItems.forEach(libItem => {
                         if(libItem.includes(itemKeyword) || itemKeyword.includes(libItem)) {
@@ -371,11 +390,9 @@
             }
         }
 
-        // 儲存紀錄
         function saveRecord() {
             const editId = document.getElementById('edit-id').value;
             const checkedItems = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
-            
             const data = {
                 date: document.getElementById('m-date').value,
                 km: parseInt(document.getElementById('m-mileage').value),
@@ -384,22 +401,18 @@
                 provider: document.getElementById('m-provider').value,
                 next: document.getElementById('m-next').value
             };
-
             if(!data.date || !data.km || data.items.length === 0) {
-                alert("請填寫日期、里程，並至少勾選一個施作項目！");
+                alert("請填寫日期、里程，並勾選施作項目！");
                 return;
             }
-
             if(editId) {
                 const idx = records.findIndex(r => r.id == editId);
                 records[idx] = { ...records[idx], ...data };
             } else {
                 records.push({ id: Date.now(), ...data });
             }
-
             resetForm();
             renderRecords();
-            document.getElementById('history').scrollIntoView({behavior: "smooth"});
         }
 
         function renderRecords() {
@@ -413,7 +426,6 @@
                                 <span class="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded mb-2 inline-block">${r.km.toLocaleString()} km</span>
                                 <h4 class="font-bold text-gray-800 text-lg">${r.items.join('、')}</h4>
                                 <p class="text-sm text-gray-500 mt-1"><i class="far fa-calendar-alt mr-2"></i>${r.date} | ${r.provider}</p>
-                                ${r.next ? `<p class="text-xs text-gray-400 mt-2 italic">下次預計: ${r.next}</p>` : ''}
                             </div>
                             <div class="flex flex-col items-end space-y-4">
                                 <p class="text-xl font-black text-gray-900">$ ${r.cost.toLocaleString()}</p>
@@ -436,12 +448,9 @@
             document.getElementById('m-cost').value = r.cost;
             document.getElementById('m-provider').value = r.provider;
             document.getElementById('m-next').value = r.next;
-
-            // 勾選對應項目
             document.querySelectorAll('.item-checkbox').forEach(cb => {
                 cb.checked = r.items.includes(cb.value);
             });
-
             document.getElementById('form-title').innerText = "修改保養紀錄";
             document.getElementById('save-btn').innerText = "更新紀錄";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
@@ -468,19 +477,51 @@
             document.getElementById('suggestion-box').classList.add('hidden');
         }
 
-        // 渲染對照表
-        function renderGuide() {
-            const body = document.getElementById('guide-table-body');
-            body.innerHTML = '';
-            suggestRules.forEach(rule => {
-                body.innerHTML += `
-                    <tr class="${rule.critical ? 'bg-red-50' : 'hover:bg-gray-50'}">
-                        <td class="px-6 py-4 font-bold">${rule.km.toLocaleString()} km</td>
-                        <td class="px-6 py-4">${rule.items[0]}</td>
-                        <td class="px-6 py-4">${rule.items.slice(1).join('、')}</td>
-                        <td class="px-6 py-4 text-gray-500">${rule.note}</td>
-                    </tr>
+        // PDF 匯出功能邏輯
+        function exportToPDF() {
+            if (records.length === 0) {
+                alert("目前沒有任何保養紀錄可供匯出。");
+                return;
+            }
+
+            // 準備報表數據
+            document.getElementById('pdf-v-model').innerText = document.getElementById('v-model').value || '未填寫';
+            document.getElementById('pdf-v-plate').innerText = document.getElementById('v-plate').value || '未填寫';
+            document.getElementById('pdf-v-vin').innerText = document.getElementById('v-vin').value || '未填寫';
+            document.getElementById('pdf-report-date').innerText = new Date().toLocaleDateString();
+
+            const tableBody = document.getElementById('pdf-table-body');
+            tableBody.innerHTML = '';
+            
+            // 按里程排序匯出
+            const sortedRecords = [...records].sort((a, b) => b.km - a.km);
+            
+            sortedRecords.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="border border-gray-300 p-2 text-center">${r.date}</td>
+                    <td class="border border-gray-300 p-2 text-center">${r.km.toLocaleString()}</td>
+                    <td class="border border-gray-300 p-2">${r.items.join('、')}</td>
+                    <td class="border border-gray-300 p-2 text-center">${r.provider}</td>
+                    <td class="border border-gray-300 p-2 text-right">$ ${r.cost.toLocaleString()}</td>
                 `;
+                tableBody.appendChild(tr);
+            });
+
+            // 執行匯出
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block'; // 暫時顯示以便擷取
+
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     `愛車保養報表_${document.getElementById('v-plate').value || '未命名'}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.style.display = 'none'; // 完成後重新隱藏
             });
         }
 
@@ -488,7 +529,18 @@
             document.getElementById('m-date').valueAsDate = new Date();
             renderItemsSelector();
             renderRecords();
-            renderGuide();
+            // 渲染指南
+            const body = document.getElementById('guide-table-body');
+            suggestRules.forEach(rule => {
+                body.innerHTML += `
+                    <tr class="${rule.critical ? 'bg-red-50' : ''}">
+                        <td class="px-6 py-4 font-bold">${rule.km.toLocaleString()} km</td>
+                        <td class="px-6 py-4">${rule.items[0]}</td>
+                        <td class="px-6 py-4">${rule.items.slice(1).join('、')}</td>
+                        <td class="px-6 py-4 text-gray-500">${rule.note}</td>
+                    </tr>
+                `;
+            });
         };
     </script>
 </body>
